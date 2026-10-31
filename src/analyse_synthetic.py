@@ -1,4 +1,7 @@
-"""Is the synthetic test subset actually a distinct acoustic population?
+"""Exploratory analysis from early development, not used by either released system. It reads unlabelled
+test audio only.
+
+Is the synthetic test subset actually a distinct acoustic population?
 
 The test set is stated to be 62% natural / 38% synthetic (clean speech + programmatically
 added noise), but participants are not given the `syntheticData` flag, and no training

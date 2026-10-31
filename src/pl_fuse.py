@@ -1,7 +1,7 @@
 """Fuse the teacher routes over the pseudo-label pools and write the stage-2 training manifest.
 
 Teacher = v137, v161, v273 (threshold + proposal routes), fused like the board set (IoU 0.6, median edges, fallback).
-Rules (CLAUDE.md: the annotator's "an event is here" is kept; only its placement may change):
+Rules (the annotator's "an event is here" is kept; only its placement may change):
   Silver rows        keep every annotator event; move its edges onto the 3-vote teacher span when IoU >= 0.3 (shift capped
                      at 0.5 s); add a teacher event only where >= 5 of the 6 routes agree and it overlaps no annotator event;
                      tier stays silver (soft targets).

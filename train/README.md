@@ -7,7 +7,7 @@ All commands run from the repository root.
 
 ## 1. Audio
 
-Competition data (`ARTPARK-IISc/Vaani-Noise-Event-Dataset`, 182 parquet shards):
+Competition data (`ARTPARK-IISc/Vaani-Noise-Event-Dataset`, 182 parquet shards; gated, so accept its terms on Hugging Face and run `hf auth login` first):
 
 ```bash
 hf download ARTPARK-IISc/Vaani-Noise-Event-Dataset --repo-type dataset --local-dir data/hf_train
@@ -114,6 +114,12 @@ Every model replays its recorded configuration (`configs/members/` or `configs/l
 
 ```bash
 bash train/train_member.sh <RUN> <GPU>
+```
+
+To fine-tune one model without retraining its ancestors, start from the released parent checkpoint instead, for example:
+
+```bash
+python3 src/train.py $(python3 src/replay_args.py configs/members/st390.json init_from=checkpoints/v390_wavlmbp_unf_tp.pt)
 ```
 
 | Stage | Runs (each starts from a run of the previous stage, named by `init_from`) |

@@ -34,7 +34,7 @@ from scorer import score
 
 
 def setup_dist() -> tuple[int, int, int]:
-    frac = float(os.environ.get("VAANI_MEM_FRAC", "0"))  # cap for training beside other tenants (GPU 0/1)
+    frac = float(os.environ.get("VAANI_MEM_FRAC", "0"))  # memory cap when sharing a GPU
     if frac > 0:
         torch.cuda.set_per_process_memory_fraction(frac)
     if "RANK" not in os.environ:
@@ -468,7 +468,7 @@ def main() -> None:
     if args.init_from:
         ckpt = torch.load(args.init_from, map_location="cpu", weights_only=False)
         # warm-start from the EMA weights: they are the ones the val score was measured on
-        state = ckpt.get("ema", ckpt["model"])
+        state = ckpt["ema"] if "ema" in ckpt else ckpt["model"]
         if args.residual_root:
             # single-channel checkpoint into a two-channel model: the residual channel starts at
             # zero weight so the warm start is exactly the old model

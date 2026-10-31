@@ -30,7 +30,7 @@ from scorer import score
 
 
 def cache_probs(ckpt_path, val_jsonl, audio_root, device, batch_size=None, workers=8, use_ema=True, residual_root=None):
-    # GPU 2 is shared; VAANI_BATCH lets a run fit in whatever another job has left free
+    # VAANI_BATCH lets a run fit beside other jobs on a shared GPU
     batch_size = batch_size or int(os.environ.get("VAANI_BATCH", "32"))
     model, _ = load_checkpoint(ckpt_path, device, use_ema=use_ema)
 

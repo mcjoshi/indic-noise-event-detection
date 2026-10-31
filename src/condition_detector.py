@@ -1,4 +1,7 @@
-"""Supervised natural/synthetic detector, calibrated to the published test prevalence.
+"""Exploratory analysis from early development, not used by either released system. It reads unlabelled
+test audio only.
+
+Supervised natural/synthetic detector, calibrated to the published test prevalence.
 
 Routing decode configs by condition only pays if the routing is accurate.  Unsupervised
 k-means over the same features recovered 27.4% of test as synthetic against a stated

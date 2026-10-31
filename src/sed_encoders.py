@@ -66,17 +66,7 @@ class PretrainedSedEncoder(nn.Module):
         if self.encoder in ("dasheng", "dasheng06b"):
             from dasheng import dasheng_06B, dasheng_base
             return dasheng_06B() if self.encoder == "dasheng06b" else dasheng_base()
-        if self.encoder == "fpasst":
-            from models.frame_passt.fpasst_wrapper import FPaSSTWrapper
-            return FPaSSTWrapper()
-        if self.encoder == "m2d":
-            from models.m2d.M2D_wrapper import M2DWrapper
-            return M2DWrapper()
-        if self.encoder == "asit":
-            from models.asit.ASIT_wrapper import ASiTWrapper
-            return ASiTWrapper()
-        from models.atstframe.ATSTF_wrapper import ATSTWrapper
-        return ATSTWrapper()
+        raise ValueError(f"encoder {self.encoder!r} was explored during development but is not part of this release")
 
     def load_checkpoint(self, path: str) -> None:
         checkpoint = Path(path)

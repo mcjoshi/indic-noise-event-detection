@@ -1,26 +1,7 @@
-"""Convolutional U-Net masker for Track 2, trained directly on SI-SDR.
+"""Convolutional U-Net masker (magnitude spectrogram in, bounded gain mask out) trained on waveform SI-SDR.
 
-Why replace the frame-context MLP that is currently deployed:
-
-  * it sees +-2 frames (~16 ms) of context, so it cannot use the temporal shape of an
-    event at all - a horn's decay or a bark's envelope is invisible to it;
-  * it was trained on CPU because a vLLM process occupied the GPU, so it saw 6,000 clips
-    for 25 epochs rather than what an A100 allows;
-  * it regresses the ideal ratio mask, a proxy, while the leaderboard scores SI-SDR.
-
-This model is a small 2-D U-Net over the magnitude spectrogram (no recurrence, which also
-sidesteps the cuDNN bf16 RNN trap recorded in CLAUDE.md), and it is trained on the
-**waveform SI-SDR** that the competition actually measures.
-
-Two properties are built in for the ASR side of the score, because `Combined = SI-SDR +
-100 * dWER` and our deployed masker currently gives back 1.46 points in transcription
-damage:
-
-  * a **mask floor**: the predicted gain is mapped into [floor, 1], so a bin is attenuated
-    at most `-20*log10(floor)` dB and never zeroed.  Spectral holes are the classic cause
-    of enhancement wrecking ASR, and a floor removes them by construction.
-  * the mask is applied only inside detected event spans by the existing span-blend
-    wrapper, so speech outside events is bit-exact.
+The predicted gain is mapped into [floor, 1], so no bin is ever zeroed. In this release it only produces the
+enhancement-residual input channel (mixture minus estimated speech) of one synthetic specialist.
 """
 
 from __future__ import annotations

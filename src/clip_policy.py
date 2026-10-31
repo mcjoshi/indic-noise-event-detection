@@ -1,5 +1,5 @@
 """Per-clip activity threshold for the threshold routes: a gradient-boosted regressor on eight clip-level features of the
-smoothed activity curve predicts the clip's Dice-best threshold (the report's cross-fitted policy, +0.0044 Dice on both official folds)."""
+smoothed activity curve predicts the clip's Dice-best threshold (optional; not used by the released systems)."""
 import numpy as np
 from model import median_filter
 from scorer import frame_mask

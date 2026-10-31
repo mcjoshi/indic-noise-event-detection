@@ -1,6 +1,6 @@
 # indic-noise-event-detection
 
-Transcript tags as supervision: routed and router-free noise event detection in Indic speech.
+Tag-constrained pseudo-labels and two-decode voting for noise event detection in Indic speech.
 Our system for IndoML Datathon 2026, Track 1 (noise event detection).
 
 Team Hydra: Manish Joshi, Neeraj Singh Aithani.
@@ -66,6 +66,9 @@ Add `--train` to also fetch HuBERT-large and the training manifests (see `train/
 
 ## Inference
 
+Numbers such as 224, 285 and 291 in file and system names are our Phase 2 submission numbers.
+
+
 ```bash
 bash scripts/run_inference.sh /path/to/audio generic_224 0   # router-free system (board 1.6114) on GPU 0
 bash scripts/run_inference.sh /path/to/audio generic 0       # router-free + long-span rule
@@ -107,6 +110,7 @@ Batch composition changes the padded forward pass at the millisecond level, so t
 - Untranscribed Vaani audio (`ARTPARK-IISc/Vaani`, shard lists in `configs/data/`) for pseudo-labelling and the pretext stage, with every competition clip removed.
 - Transcribed Vaani audio (`ARTPARK-IISc/Vaani-transcription-part`), pseudo-labelled by our teachers and filtered by the event tags in each transcript, excluding every recording behind a validation or test clip.
 - ESC-50 (`ashraq/esc50`) events for synthetic mixtures and the pretext stage.
+- Track 2 noisy/clean training pairs, only to train the enhancement U-Net that feeds one synthetic specialist.
 - No test labels, test pseudo-labels or hand annotation were used.
 
 ## Training
@@ -154,7 +158,7 @@ The training manifests referenced by the configurations (`data/splits/*.jsonl`, 
 | BEATs iter3+ (AS2M) | `BEATs_iter3_plus_AS2M.pt`, microsoft/unilm (BEATs) | encoder of the BEATs members and starting point of the BEATs pretext stage |
 | Dasheng base | `dasheng` 0.0.9 (pip), Xiaomi | encoder of the Dasheng specialists and starting point of their pretext stage |
 | BEATs / Dasheng localisation pretext | ours (`pretrained/beats_loc_10000.pt`, `pretrained/dasheng_loc_10000.pt`) | encoder initialisation |
-| Enhancement U-Net | ours (`pretrained/unet_v4.pt`) | residual channel of one synthetic specialist |
+| Enhancement U-Net | ours (`pretrained/unet_v4.pt`, trained on Track 2 pairs) | residual channel of one synthetic specialist |
 
 ## Disclosures
 
@@ -164,4 +168,5 @@ The training manifests referenced by the configurations (`data/splits/*.jsonl`, 
 - The untranscribed Vaani pool was filtered by clip ID only: 108 of its 207,268 clips come from recordings that also contain a test clip. They carry no labels.
 - One clip of the routed submission carried a span patched in from an earlier submission; the public code leaves that clip empty (every voter abstains).
 - The data generators were refined during the competition, so regenerated synthetic audio follows the released recipe without being bit-identical (see `train/README.md`).
-- External data is listed under Data above; no test labels, test pseudo-labels or manual annotation were used.
+- No test labels, test pseudo-labels or manual annotation were used. Unlabelled test audio was inspected twice: early in development, its acoustic statistics (noise floor, spectral shape) guided the background augmentation of our first synthetic mixture set (`src/analyse_synthetic.py`, `src/synthetic_aug.py`; that set, `synthmix_hard`, is in the released training manifests), and the router's peak threshold was checked against the test files' peak values (2,080 at 0.99, 3,437 at 1.0).
+- External data is listed under Data above.

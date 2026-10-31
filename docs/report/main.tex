@@ -8,12 +8,10 @@
 \urlstyle{same}
 \setlength{\tabcolsep}{3.2pt}
 \setlength{\emergencystretch}{2em}
-% Router-free + long-span rule (submission 285) has no board score available.
-\newcommand{\GENSCORE}{not scored}
 
 \begin{document}
 
-\title{Transcript Tags as Supervision:\\Routed and Router-Free Noise Event Detection in Indic Speech}
+\title{Tag-Constrained Pseudo-Labels and\\Two-Decode Voting for Noise Event Detection\\in Indic Speech}
 
 \author{\IEEEauthorblockN{Manish Joshi and Neeraj Singh Aithani}
 \IEEEauthorblockA{Team Hydra, IndoML Datathon 2026, Track 1}}
@@ -23,13 +21,13 @@
 \begin{abstract}
 We detect the onset and offset of every non-speech noise event in Vaani speech clips (Combined = event F1 + segment Dice), with scarce verified labels and a test set that mixes natural recordings with synthetic mixtures.
 Two systems share three components.
-First, the event tags in Vaani transcripts fix how many events a teacher ensemble may label in a clip, and roughly where, turning a 305k-clip transcribed pool into training labels.
+First, the event tags in Vaani transcripts fix how many events a teacher ensemble may label in a clip, and roughly where, which improves pseudo-label quality on a 305k-clip transcribed pool (+0.050 against Gold).
 Second, BEATs and Dasheng encoders learn event boundaries through a localisation pretext task on unlabelled Vaani audio.
 Third, every model is decoded twice, by a threshold with a learned boundary refiner and by an event-proposal head, and a weighted vote fuses all decodes.
 Our router-free system runs five students trained on blended natural and synthetic data on every clip and scores 1.6114; nothing in it reads a clip's domain, so one model set and one vote serve natural recordings and mixtures alike.
 Our routed system detects the organisers' mixtures by their peak level and sends them to synthetic specialists; it placed second with 1.6168, 0.0004 behind first.
 Both reach event F1 0.53 on natural clips and 0.99 on mixtures.
-Code, configurations and checkpoints: \url{https://github.com/mcjoshi/indic-noise-event-detection}.
+Code: \url{https://github.com/mcjoshi/indic-noise-event-detection}; checkpoints: \url{https://huggingface.co/manishjoshiai/indic-noise-event-detection}.
 \end{abstract}
 
 \begin{figure*}[t]
@@ -132,7 +130,7 @@ The labels cover the transcribed clips and the Bronze tier; Silver edges move on
 We insert up to six events, non-overlapping except in our earliest ESC-50 set, into the event-free stretches of Gold training clips, kept at natural level and peak-normalised afterwards.
 Events come from ESC-50 folds 1--4 and Vaani Gold events (168k clips, 6--12\,dB), or from 2,213 noise events obtained by subtracting the clean references supplied with the organisers' synthetic validation clips (48k clips, $-6$ to 13\,dB).
 Router-free students train on roughly balanced blends of natural and synthetic clips (147k, 200k or 240k rows; the 200k blend adds our validation split and the organisers' natural clips).
-Augmentation: random crops, threefold Gold oversampling, mixup ($\alpha=0.2$, max-union targets) for the synthetic specialists, and shift, gain and noise views for a consistency loss.
+Augmentation: random crops, threefold Gold oversampling for natural-route models, mixup ($\alpha=0.2$, max-union targets) for the BEATs and Dasheng specialists, and shift, gain and noise views for a consistency loss.
 
 \section{Proposed Method}
 \textbf{Architecture.}
@@ -149,7 +147,7 @@ Encoders are fine-tuned at a tenth of the head rate (0.85 layer-wise decay for W
 Training proceeds in chains in the spirit of noisy-student self-training~\cite{noisystudent} and multi-stage ensemble distillation for SED~\cite{cpjku}: a frozen-encoder parent, an unfrozen child, then a one-epoch student on teacher-labelled data; the 15 final models descend from 14 ancestors, all released with their exact configurations.
 
 \textbf{Localisation pretext.}
-BEATs and Dasheng first spend 10k steps localising 0--3 ESC-50 events pasted into 8\,s crops of untranscribed Vaani audio (frame and boundary BCE), which raises the boundary hit rate on held-out inserts from 0.059 to 0.706 for BEATs (Dasheng: 0.728).
+BEATs and Dasheng first spend 10k steps localising 0--3 ESC-50 events pasted into 8\,s crops of untranscribed Vaani audio; the boundary hit rate on held-out inserts rises from 0.059 to 0.706 (BEATs) and 0.728 (Dasheng).
 
 \textbf{Two decodes per model.}
 The threshold decode applies a tuned threshold, median filter, merge gap, minimum duration and edge offsets; a small Conv1d refiner then predicts a 101-bin distribution over $\pm$250\,ms around each endpoint from the model's own curves, and the endpoint moves to its expected value.
@@ -162,8 +160,7 @@ Nothing in this system reads a clip's domain: one model set, one decode configur
 An optional long-span rule keeps clusters of at least 6\,s at weight 1.5 (IoU 0.45); it improved F1 and Dice on both halves of our validation split (measured on the previous model set) but has no board score.
 
 \textbf{Routed system.}
-The organisers' mixtures are peak-normalised to 0.99 while natural clips reach full scale: on the test set 2,080 clips peak at 0.99 and 3,437 at 1.0, exactly the stated subset sizes.
-We exploit this property of the release with a peak test ($|x|<0.995$).
+The organisers' mixtures are peak-normalised to 0.99 while natural clips reach full scale: on the test set 2,080 clips peak at 0.99 and 3,437 at 1.0, exactly the stated subset sizes, a property of the release that a peak test ($|x|<0.995$) exploits.
 Mixtures go to four specialists (BEATs with an enhancement-residual input channel, two Dasheng seeds, Whisper) fused at three of four votes~\cite{wbf}, followed by a gate that drops spans more than 30\,dB below the clip's 95th-percentile level.
 Natural clips are fused from six models $\times$ two decodes, keeping clusters with four of twelve votes, or three when the span is at least 4\,s (IoU 0.45).
 
@@ -235,10 +232,10 @@ Routed vs router-free (models differ) & B & no & +0.0054 \tabularnewline
 \centering\footnotesize
 \begin{tikzpicture}
 \begin{axis}[width=\columnwidth, height=3.2cm, ymin=1.600, ymax=1.619, xmin=0.6, xmax=6.8,
-  xtick={1,...,6}, xticklabels={5 blended\\students, 2 relabelled\\+ BEATs, weighted\\vote, Whisper\\down to 0.5, 240k\\blend, + validation\\clips},
+  xtick={1,...,6}, xticklabels={blended\\students, relabelled\\+BEATs, weighted\\vote, Whisper\\at 0.5, 240k\\blend, +val.\\clips},
   xticklabel style={font=\scriptsize, align=center}, yticklabel style={font=\scriptsize}, scaled y ticks=false, yticklabel={\pgfmathprintnumber[fixed, fixed zerofill, precision=3]{\tick}},
   ylabel={Combined}, ylabel style={font=\scriptsize}, grid=major, grid style={gray!20}, legend style={font=\scriptsize, at={(0.5,1.03)}, anchor=south, draw=none}, legend columns=2]
-\addplot[thick, blue!70!black, mark=*, mark size=1.5pt, nodes near coords, point meta=explicit symbolic, every node near coord/.style={font=\tiny, anchor=north west}, forget plot] coordinates {(1,1.6024)[1.6024] (2,1.6050)[1.6050] (3,1.6068)[1.6068] (4,1.6089)[1.6089] (5,1.6100)[1.6100] (6,1.6114)[1.6114]};
+\addplot[thick, blue!70!black, mark=*, mark size=1.5pt, nodes near coords, point meta=explicit symbolic, every node near coord/.style={font=\tiny, anchor=south}, forget plot] coordinates {(1,1.6024)[1.6024] (2,1.6050)[1.6050] (3,1.6068)[1.6068] (4,1.6089)[1.6089] (5,1.6100)[1.6100] (6,1.6114)[1.6114]};
 \addplot[dashed, red!70!black, domain=0.6:6.8] {1.6168}; \addlegendentry{routed (2nd), 1.6168}
 \addplot[dotted, thick, black, domain=0.6:6.8] {1.6173}; \addlegendentry{1st place, 1.6173}
 \end{axis}
@@ -252,16 +249,16 @@ In Table~\ref{tab:main} the routed system is second, 0.0004 below first and 0.00
 The router-free system is 0.0054 lower (fourth as a separate entry; fourth place 1.611179), yet its derived event F1 (0.793) is above each of the top three and its natural F1 equals the routed system's: the gap is Dice (0.819 vs 0.827), mostly on natural clips, where the systems also differ in models and vote rule.
 
 \textbf{Component evidence.}
-In Table~\ref{tab:abl}, tag counts alone barely help, but counts with position matching add +0.050 in label quality, and a student trained on these labels beats one trained on plain teacher labels from the same audio and seed by 0.0036.
+In Table~\ref{tab:abl} the tag gain comes from position matching, not counts alone; for a single student, tag labels add 0.0036 and the extra transcribed audio 0.0052.
 
 \textbf{Disclosures.}
 Late changes to both systems were selected on the Phase 2 board within its daily limit, so the board deltas in Table~\ref{tab:abl} and Fig.~\ref{fig:chain} are optimistic.
 The organisers' 1,806 natural clips train one BEATs and two Whisper natural models (routed) and one Whisper student (router-free); the last three also train on our validation split and select their checkpoints on it. All 695 synthetic clips train every synthetic specialist and every router-free student, so scores on those clips are in-sample.
-The untranscribed pool (ii) was filtered by clip ID only; 108 of its 207,268 clips come from recordings that also contain a test clip, without labels.
-From raw audio and the released checkpoints, the public inference script reproduces the router-free submission and its long-span variant on all 5,517 test clips and the routed submission on 5,516; on the remaining clip every voter abstains, and the submitted file carried a span patched in from an earlier submission.
+Unlabelled test audio was used twice: its acoustic statistics guided the background augmentation of our earliest mixture set, and its peak values checked the router. The untranscribed pool (ii) was filtered by clip ID only; 108 of its 207,268 clips come from recordings that also contain a test clip, without labels.
+From raw audio, the public code reproduces both router-free submissions on all 5,517 test clips and the routed one on 5,516 (one submitted clip carried a span patched in from an earlier submission).
 
 \textbf{Conclusion.}
-Transcript tags are a cheap, accurate supervision signal for noise event detection, and with a localisation pretext and two complementary decodes per model they support both a routed system that placed second and a router-free system 0.0054 behind it.
+Transcript tags are a cheap way to constrain pseudo-labels for noise event detection, and with a localisation pretext and two complementary decodes per model they support both a routed system that placed second and a router-free system 0.0054 behind it.
 Natural recordings remain the open problem (event F1 0.53 against 0.99 on mixtures).
 
 \begin{thebibliography}{15}

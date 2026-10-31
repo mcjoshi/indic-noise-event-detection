@@ -26,6 +26,9 @@ for f in list_repo_files(a.repo):
     dst = PRETRAINED / Path(f).name
     if f.startswith("pretrained/") and not dst.exists():
         shutil.copy(hf_hub_download(a.repo, f), dst)
+# Dasheng base weights (fetched by the dasheng package into the torch hub cache) for offline inference
+from dasheng import dasheng_base  # noqa: E402
+dasheng_base()
 snapshot_download("openai/whisper-medium", local_dir=PRETRAINED / "whisper_medium",
                   allow_patterns=["config.json", "preprocessor_config.json", "model.safetensors"])
 snapshot_download("microsoft/wavlm-base-plus", local_dir=PRETRAINED / "wavlm_base_plus",
