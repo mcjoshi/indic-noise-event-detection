@@ -1,0 +1,150 @@
+{
+ "system": "291_r275m374c",
+ "board": {
+  "combined": 1.6168,
+  "event_f1": 0.7903,
+  "segment_dice": 0.8265
+ },
+ "router": {
+  "rule": "max |sample| of the waveform < 0.995 -> synthetic, else natural"
+ },
+ "natural": {
+  "fusion": {
+   "rule": "long_vote",
+   "iou": 0.6,
+   "edges": "median",
+   "votes": 4,
+   "long_sec": 4.0,
+   "long_votes": 3,
+   "iou_long": 0.45,
+   "fallback": "largest cluster"
+  },
+  "members": {
+   "sML373": {
+    "checkpoint": "checkpoints/sML373.pt",
+    "threshold_route_config": "configs/decode/postproc_sty373_natural.json",
+    "raw_route_config": "configs/decode/postproc_sty373_epnraw.json",
+    "refiner": "checkpoints/refiner_sty373.pt",
+    "decode_assets_from": "sty373",
+    "trained_from": "crnn_v373_whisper_unf_tp",
+    "train_manifest": "train_student_mix3n_valoff.jsonl",
+    "encoder": "whisper_medium",
+    "batch_size": 8,
+    "run": "sML373"
+   },
+   "sML374c": {
+    "checkpoint": "checkpoints/sML374c.pt",
+    "threshold_route_config": "configs/decode/postproc_st374_natural.json",
+    "raw_route_config": "configs/decode/postproc_st374_epnraw.json",
+    "refiner": "checkpoints/refiner_st374.pt",
+    "decode_assets_from": "st374",
+    "trained_from": "crnn_v374_whisper_unf_tp2",
+    "train_manifest": "train_student_mix1n_valoff.jsonl",
+    "encoder": "whisper_medium",
+    "batch_size": 8,
+    "run": "sML374c"
+   },
+   "v365": {
+    "checkpoint": "checkpoints/v365_whisper_unf_full.pt",
+    "threshold_route_config": "configs/decode/postproc_v365_whisper_unf_full_natural.json",
+    "raw_route_config": "configs/decode/postproc_v365_whisper_unf_full_epnraw.json",
+    "refiner": "checkpoints/refiner_v365_whisper_unf_full.pt",
+    "decode_assets_from": "v365_whisper_unf_full",
+    "trained_from": "crnn_v333_whisper_base_pl2_e6",
+    "train_manifest": "train_v29_pl2.jsonl",
+    "encoder": "whisper_medium",
+    "batch_size": 16,
+    "run": "v365_whisper_unf_full"
+   },
+   "v137": {
+    "checkpoint": "checkpoints/v137_n3_longunf.pt",
+    "threshold_route_config": "configs/decode/postproc_v137_n3_longunf_natural.json",
+    "raw_route_config": "configs/decode/postproc_v137_n3_longunf_epnraw.json",
+    "refiner": "checkpoints/refiner_v137_n3_longunf.pt",
+    "decode_assets_from": "v137_n3_longunf",
+    "trained_from": "crnn_v101_n3_ld",
+    "train_manifest": "train_gold_parent20k.jsonl",
+    "encoder": "beats",
+    "batch_size": 16,
+    "run": "v137_n3_longunf"
+   },
+   "v161": {
+    "checkpoint": "checkpoints/v161_v145_dice3_s2.pt",
+    "threshold_route_config": "configs/decode/postproc_v161_v145_dice3_s2_natural.json",
+    "raw_route_config": "configs/decode/postproc_v161_v145_dice3_s2_epnraw.json",
+    "refiner": "checkpoints/refiner_v161_v145_dice3_s2.pt",
+    "decode_assets_from": "v161_v145_dice3_s2",
+    "trained_from": "crnn_v145_n3_longunf_off",
+    "train_manifest": "train_gold_plus_off.jsonl",
+    "encoder": "beats",
+    "batch_size": 16,
+    "run": "v161_v145_dice3_s2"
+   },
+   "v390": {
+    "checkpoint": "checkpoints/v390_wavlmbp_unf_tp.pt",
+    "threshold_route_config": "configs/decode/postproc_v390_wavlmbp_unf_tp_natural.json",
+    "raw_route_config": "configs/decode/postproc_v390_wavlmbp_unf_tp_epnraw.json",
+    "refiner": "checkpoints/refiner_v390_wavlmbp_unf_tp.pt",
+    "decode_assets_from": "v390_wavlmbp_unf_tp",
+    "trained_from": "crnn_v251_hubert_long",
+    "train_manifest": "train_v29_pl4_tp.jsonl",
+    "encoder": "wavlm",
+    "batch_size": 16,
+    "run": "v390_wavlmbp_unf_tp"
+   }
+  }
+ },
+ "synthetic": {
+  "fusion": {
+   "rule": "wbf",
+   "iou": 0.6,
+   "edges": "mean",
+   "votes": 3,
+   "fallback": true,
+   "silence_gate_db": 30.0
+  },
+  "members": {
+   "v95b": {
+    "checkpoint": "checkpoints/v95b_selB.pt",
+    "config": "configs/decode/postproc_v95b_selB_offsyn.json",
+    "decode_assets_from": "v95b_selB",
+    "trained_from": "crnn_v87_synv3_big",
+    "train_manifest": "train_synth_v4_offall.jsonl",
+    "encoder": "beats",
+    "batch_size": 16,
+    "run": "v95b_selB",
+    "residual": true
+   },
+   "v112s": {
+    "checkpoint": "checkpoints/v112s_dasheng_all.pt",
+    "config": "configs/decode/postproc_v112s_dasheng_all_offsyn.json",
+    "decode_assets_from": "v112s_dasheng_all",
+    "trained_from": "crnn_v90_synv3_giant_v11",
+    "train_manifest": "train_synth_v4_offall.jsonl",
+    "encoder": "dasheng",
+    "batch_size": 16,
+    "run": "v112s_dasheng_all"
+   },
+   "v113s": {
+    "checkpoint": "checkpoints/v113s_dasheng_all.pt",
+    "config": "configs/decode/postproc_v113s_dasheng_all_offsyn.json",
+    "decode_assets_from": "v113s_dasheng_all",
+    "trained_from": "crnn_v90_synv3_giant_v11",
+    "train_manifest": "train_synth_v4_offall.jsonl",
+    "encoder": "dasheng",
+    "batch_size": 16,
+    "run": "v113s_dasheng_all"
+   },
+   "s402": {
+    "checkpoint": "checkpoints/s402_whisper_syn.pt",
+    "config": "configs/decode/postproc_s402_whisper_syn_offsyn.json",
+    "decode_assets_from": "s402_whisper_syn",
+    "trained_from": "crnn_u373_mix",
+    "train_manifest": "train_synth_v4_offall.jsonl",
+    "encoder": "whisper_medium",
+    "batch_size": 16,
+    "run": "s402_whisper_syn"
+   }
+  }
+ }
+}

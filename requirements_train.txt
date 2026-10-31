@@ -1,0 +1,4 @@
+-r requirements_inference.txt
+pandas==2.3.2
+pyarrow==21.0.0
+scikit-learn==1.7.1

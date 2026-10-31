@@ -1,0 +1,14 @@
+/checkpoints/*.pt
+/pretrained/
+/outputs/
+/work/
+/data/
+__pycache__/
+*.pyc
+.env
+.cache/
+
+*.aux
+*.log
+*.out
+/docs/report/main.pdf

@@ -1,0 +1,23 @@
+{
+  "config": {
+    "threshold": 0.65,
+    "offset_threshold": 0.5,
+    "median_k": 1,
+    "merge_gap": 0.0,
+    "min_dur": 0.0,
+    "onset_bias": 0.0,
+    "offset_bias": -0.02,
+    "snap_sec": 0.0
+  },
+  "natural_scores": {
+    "event_precision": 0.49341,
+    "event_recall": 0.39445,
+    "event_f1": 0.43842,
+    "segment_dice": 0.71224,
+    "combined": 1.15065,
+    "n_clips": 2005,
+    "n_ref_events": 3605,
+    "n_pred_events": 2882
+  },
+  "oof_estimate": 1.14142
+}

@@ -1,0 +1,80 @@
+{
+ "system": "224_uni5sm",
+ "board": {
+  "combined": 1.6114
+ },
+ "fusion": {
+  "rule": "weighted_vote",
+  "iou": 0.6,
+  "edges": "median",
+  "keep_if_summed_weight_at_least": 2.5,
+  "fallback": "largest cluster"
+ },
+ "members": {
+  "stx374": {
+   "checkpoint": "checkpoints/stx374.pt",
+   "threshold_route_config": "configs/decode/postproc_stx374_natural.json",
+   "raw_route_config": "configs/decode/postproc_stx374_epnraw.json",
+   "refiner": "checkpoints/refiner_stx374.pt",
+   "decode_assets_from": "stx374",
+   "trained_from": "crnn_v374_whisper_unf_tp2",
+   "train_manifest": "train_student_mix2.jsonl",
+   "encoder": "whisper_medium",
+   "weight": 0.5,
+   "batch_size": 16,
+   "run": "stx374"
+  },
+  "stx365": {
+   "checkpoint": "checkpoints/stx365.pt",
+   "threshold_route_config": "configs/decode/postproc_stx365_natural.json",
+   "raw_route_config": "configs/decode/postproc_stx365_epnraw.json",
+   "refiner": "checkpoints/refiner_stx365.pt",
+   "decode_assets_from": "stx365",
+   "trained_from": "crnn_v365_whisper_unf_full",
+   "train_manifest": "train_student_mix2.jsonl",
+   "encoder": "whisper_medium",
+   "weight": 0.5,
+   "batch_size": 16,
+   "run": "stx365"
+  },
+  "sU373": {
+   "checkpoint": "checkpoints/sU373.pt",
+   "threshold_route_config": "configs/decode/postproc_u373_mix_natural.json",
+   "raw_route_config": "configs/decode/postproc_u373_mix_epnraw.json",
+   "refiner": "checkpoints/refiner_u373_mix.pt",
+   "decode_assets_from": "u373_mix",
+   "trained_from": "crnn_v373_whisper_unf_tp",
+   "train_manifest": "train_unified_mix_valoff.jsonl",
+   "encoder": "whisper_medium",
+   "weight": 0.5,
+   "batch_size": 8,
+   "run": "sU373"
+  },
+  "st137": {
+   "checkpoint": "checkpoints/st137.pt",
+   "threshold_route_config": "configs/decode/postproc_st137_natural.json",
+   "raw_route_config": "configs/decode/postproc_st137_epnraw.json",
+   "refiner": "checkpoints/refiner_st137.pt",
+   "decode_assets_from": "st137",
+   "trained_from": "crnn_v137_n3_longunf",
+   "train_manifest": "train_student_mix.jsonl",
+   "encoder": "beats",
+   "weight": 1.0,
+   "batch_size": 16,
+   "run": "st137"
+  },
+  "st390": {
+   "checkpoint": "checkpoints/st390.pt",
+   "threshold_route_config": "configs/decode/postproc_st390_natural.json",
+   "raw_route_config": "configs/decode/postproc_st390_epnraw.json",
+   "refiner": "checkpoints/refiner_st390.pt",
+   "decode_assets_from": "st390",
+   "trained_from": "crnn_v390_wavlmbp_unf_tp",
+   "train_manifest": "train_student_mix.jsonl",
+   "encoder": "wavlm",
+   "weight": 0.5,
+   "batch_size": 16,
+   "run": "st390"
+  }
+ }
+}

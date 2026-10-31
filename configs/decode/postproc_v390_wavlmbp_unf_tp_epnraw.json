@@ -1,0 +1,61 @@
+{
+ "config": {
+  "threshold": 0.7,
+  "offset_threshold": 0.55,
+  "median_k": 7,
+  "merge_gap": 0.0,
+  "min_dur": 0.0,
+  "onset_bias": -0.08,
+  "offset_bias": -0.04,
+  "snap_sec": 0.0,
+  "epn": {
+   "p_min": 0.3,
+   "conf_min": 0.6,
+   "min_dur": 0.0,
+   "vote": true,
+   "refine": false,
+   "suppress_accepted_only": true,
+   "k": 20
+  }
+ },
+ "natural_scores": {
+  "f1": 0.4447792677414494,
+  "dice": 0.6880388310658647,
+  "combined": 1.1328180988073142
+ },
+ "baseline": {
+  "event_precision": 0.50835,
+  "event_recall": 0.39695,
+  "event_f1": 0.44579,
+  "segment_dice": 0.69588,
+  "combined": 1.14167,
+  "n_clips": 2005,
+  "n_ref_events": 3605,
+  "n_pred_events": 2815
+ },
+ "oof_gains": [
+  -0.017893760931818603,
+  -0.0077255016647064245
+ ],
+ "oof_chosen": [
+  {
+   "p_min": 0.3,
+   "conf_min": 0.6,
+   "min_dur": 0.0,
+   "vote": false,
+   "refine": true,
+   "suppress_accepted_only": true,
+   "extend_min": 0.5
+  },
+  {
+   "p_min": 0.3,
+   "conf_min": 0.5,
+   "min_dur": 0.0,
+   "vote": true,
+   "refine": true,
+   "suppress_accepted_only": false,
+   "extend_min": 0.5
+  }
+ ],
+ "ckpt": "../work/crnn_v390_wavlmbp_unf_tp/best.pt"
+}

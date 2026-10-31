@@ -1,0 +1,28 @@
+{
+  "config": {
+    "threshold": 0.8,
+    "offset_threshold": null,
+    "median_k": 5,
+    "merge_gap": 0.06,
+    "min_dur": 0.05,
+    "onset_bias": 0.02,
+    "offset_bias": -0.04,
+    "snap_sec": 0.2
+  },
+  "scores_full_val": {
+    "event_precision": 0.99192,
+    "event_recall": 0.99819,
+    "event_f1": 0.99505,
+    "segment_dice": 0.98414,
+    "combined": 1.97919,
+    "n_clips": 695,
+    "n_ref_events": 2213,
+    "n_pred_events": 2227
+  },
+  "oof_per_fold": [
+    1.97843,
+    1.97778
+  ],
+  "oof_estimate": 1.9781,
+  "selection_optimism": 0.00109
+}

@@ -1,0 +1,10 @@
+torch==2.9.0
+torchaudio==2.9.0
+numpy==1.26.4
+scipy==1.16.1
+soundfile==0.12.1
+transformers==5.16.1
+dasheng==0.0.9
+einops==0.8.1
+safetensors==0.8.0
+huggingface_hub==1.30.0
