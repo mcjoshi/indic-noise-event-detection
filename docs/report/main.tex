@@ -31,27 +31,38 @@ A routed variant that first separates the organisers' mixtures by their peak lev
 \begin{figure*}[t]
 \centering\footnotesize
 \resizebox{\textwidth}{!}{\begin{tikzpicture}[box/.style={draw, rounded corners, align=center, inner sep=3pt, fill=white}, >={Stealth[length=2mm]}, lab/.style={font=\bfseries\small, anchor=west}]
-% training half
-\node[lab] at (-0.2,2.85) {Training (unified system)};
-\node[box, fill=blue!6] (nat) at (1.7,1.75) {natural clips\\Gold + Silver labels, and\\\textbf{tag-constrained pseudo-labels}\\(305k transcribed clips)};
-\node[box, fill=orange!8] (syn) at (1.7,0.0) {synthetic mixtures\\ESC-50, Vaani and organiser\\noise events, exact labels};
-\node[box] (blend) at (5.4,0.875) {balanced\\natural/synthetic\\blend};
+% (a) unified system
+\node[lab] at (-0.2,2.75) {(a) Unified system (our main method): one model set and one vote for every clip};
+\node[box, fill=blue!6] (nat) at (1.6,1.35) {natural clips: Gold, Silver and\\\textbf{tag-constrained pseudo-labels}};
+\node[box, fill=orange!8] (syn) at (1.6,0.2) {synthetic mixtures,\\exact labels};
+\node[box] (blend) at (5.0,0.775) {balanced\\blend};
 \draw[->] (nat.east) -- (blend.west); \draw[->] (syn.east) -- (blend.west);
-% students
-\node[box, fill=gray!8] (st) at (9.0,0.875) {\textbf{5 students}\\Whisper-medium $\times$3 (weight 0.5)\\BEATs + pretext (weight 1.0)\\WavLM (weight 0.5)};
+\node[box, fill=gray!8] (st) at (8.6,0.775) {\textbf{5 students}\\Whisper-medium $\times$3 (weight 0.5)\\BEATs + pretext (weight 1.0)\\WavLM (weight 0.5)};
 \draw[->] (blend) -- node[above, font=\scriptsize] {train} (st);
-% inference half
-\node[lab] at (11.2,2.85) {Inference (every clip)};
-\node[box] (clip) at (9.0,2.3) {any test clip};
+\node[box] (clip) at (8.6,2.05) {any test clip};
 \draw[->] (clip) -- (st);
-\node[box, fill=green!6] (ro) at (13.0,0.875) {\textbf{2 readouts per model}\\T: threshold + boundary refiner\\P: event proposals (EPN)\\10 readouts in total};
-\node[box, fill=green!6] (vote) at (17.0,0.875) {\textbf{weighted vote}\\cluster spans at IoU $\geq$0.6\\sum model weights\\keep at $\geq$2.5 of 6};
-\node[box] (ev) at (20.1,0.875) {events\\(median\\edges)};
+\node[box, fill=green!6] (ro) at (12.7,0.775) {\textbf{2 readouts per model}\\T: threshold + boundary refiner\\P: event proposals (EPN)};
+\node[box, fill=green!6] (vote) at (16.6,0.775) {\textbf{weighted vote}\\over 10 readouts\\keep at $\geq$2.5 of 6};
+\node[box] (ev) at (19.7,0.775) {events};
 \draw[->] (st) -- (ro); \draw[->] (ro) -- (vote); \draw[->] (vote) -- (ev);
-% routed variant strip
-\node[draw, dashed, rounded corners, inner sep=3pt, anchor=west, text width=20.2cm, align=left, font=\scriptsize] (r) at (-0.2,-1.3) {\textbf{Routed variant (final submission):} a peak test ($|x|<0.995$) separates the organisers' mixtures; mixtures go to 4 synthetic specialists (3-of-4 vote, silence gate), natural clips to 6 models (unweighted vote, 4 of 12 readouts; 3 of 12 for spans $\geq$4\,s). Same core components.};
+\draw[gray!50] (-0.2,-0.45) -- (20.5,-0.45);
+% (b) routed system
+\node[lab] at (-0.2,-0.9) {(b) Routed (separate) system (our final submission): mixtures and natural clips get their own models};
+\node[box] (clip2) at (0.9,-2.45) {test clip};
+\node[box, fill=yellow!10] (rt) at (3.6,-2.45) {\textbf{router}: mixture if\\peak $|x|<0.995$};
+\draw[->] (clip2) -- (rt);
+\node[box, fill=orange!8] (sp) at (8.6,-1.75) {\textbf{4 synthetic specialists}: BEATs + noise\\input, Dasheng $\times$2, Whisper (1 readout each)};
+\node[box, fill=green!6] (sv) at (13.3,-1.75) {vote: 3 of 4};
+\node[box, fill=green!6] (sg) at (16.6,-1.75) {silence gate: drop\\near-silent spans};
+\node[box, fill=blue!6] (nm) at (8.6,-3.15) {\textbf{6 natural models}: Whisper $\times$3,\\BEATs $\times$2, WavLM (2 readouts each)};
+\node[box, fill=green!6] (nv) at (14.95,-3.15) {unweighted vote: $\geq$4 of 12 readouts\\($\geq$3 for spans of at least 4\,s)};
+\node[box] (ev2) at (19.7,-2.45) {events};
+\draw[->] (rt.east) -- ++(0.45,0) |- node[pos=0.78, above, font=\scriptsize] {yes} (sp.west);
+\draw[->] (rt.east) -- ++(0.45,0) |- node[pos=0.78, below, font=\scriptsize] {no} (nm.west);
+\draw[->] (sp) -- (sv); \draw[->] (sv) -- (sg); \draw[->] (nm) -- (nv);
+\draw[->] (sg.east) -| (ev2.north); \draw[->] (nv.east) -| (ev2.south);
 \end{tikzpicture}}
-\caption{The unified system, our main method: one balanced blend trains five students, and every test clip, natural or synthetic, goes through the same students, two readouts each and one weighted vote. Dashed: the routed variant.}
+\caption{The two systems. (a) Unified: one set of five students and one weighted vote serve every clip. (b) Routed: a peak-level test sends mixtures to synthetic specialists and natural clips to six models.}
 \label{fig:sys}
 \end{figure*}
 
@@ -99,7 +110,7 @@ A routed variant that first separates the organisers' mixtures by their peak lev
 \node[font=\scriptsize, red!70!black] at (9.25,-0.1) {$\times$};
 \end{tikzpicture}
 \end{minipage}
-\caption{The two core ideas. (a) Tags fix how many teacher candidates become labels; Hungarian matching on time and support picks them (votes out of 10 teacher decodes). (b) T = threshold readout with refiner, P = proposal readout; three of the five models shown. The short event has all six readouts (4.0 $\geq$ 2.5); the long one only Whisper P, BEATs P and WavLM T (2.0), kept by the long-span rule (1.5; used by the routed system, optional for the unified one); the isolated span (0.5) is dropped. Not to scale.}
+\caption{The two core ideas. (a) Tags fix how many teacher candidates become labels, and Hungarian matching on time and support (votes out of 10) picks them. (b) T = threshold readout, P = proposal readout (three of five models shown): the short event collects weight 4.0 $\geq$ 2.5; the long one 2.0, kept by the long-span rule (1.5); the isolated span is dropped.}
 \label{fig:novel}
 \end{figure*}
 
@@ -164,12 +175,11 @@ A \emph{long-span rule} lets long clusters, which single readouts often split, p
 General audio encoders recognise sounds but were not trained to time them, so before fine-tuning BEATs and Dasheng spend 10k steps finding 0--3 ESC-50 sounds pasted into untranscribed Vaani audio; the share of pasted events they localise within the competition's tolerance rises from 0.059 to 0.706 (BEATs) and 0.728 (Dasheng).
 
 \textbf{D. Unified system (our main method).}
-Five students (three Whisper-medium, one BEATs with the pretext, one WavLM) are trained on roughly equal shares of natural clips with tag-constrained labels and synthetic mixtures with exact labels.
-One vote fuses their ten readouts on every clip (Whisper and WavLM weigh 0.5, BEATs 1.0; keep at 2.5 of 6), with no knowledge of the clip's type (Fig.~\ref{fig:sys}).
+Five students (three Whisper-medium, one BEATs with the pretext, one WavLM), trained on roughly equal shares of natural clips with tag-constrained labels and synthetic mixtures with exact labels, serve every clip through one weighted vote over their ten readouts, with no knowledge of the clip's type (Fig.~\ref{fig:sys}a).
 
-\textbf{E. Routed variant (our final submission).}
-The organisers' mixtures are peak-normalised to 0.99 while natural clips reach full scale, so a peak test ($|x|<0.995$) separates them exactly; this exploits a property of the release, not of the audio.
-Mixtures go to four synthetic specialists (BEATs, two Dasheng, Whisper; the BEATs one also sees the enhancement network's noise estimate as a second input), followed by a gate that drops spans more than 30\,dB below the clip's loudest frames; natural clips go to six models (three Whisper, two BEATs, one WavLM) with the long-span rule from 4\,s (Fig.~\ref{fig:sys}, dashed).
+\textbf{E. Routed system (our final submission).}
+The organisers' mixtures are peak-normalised to 0.99 while natural clips reach full scale, so a peak test ($|x|<0.995$) separates them exactly, a property of the release rather than of the audio.
+Mixtures go to four synthetic specialists (one also sees the enhancement network's noise estimate) and a gate that drops spans more than 30\,dB below the clip's loudest frames; natural clips go to six models with the long-span rule from 4\,s (Fig.~\ref{fig:sys}b).
 
 \begin{table}[t]
 \caption{Pretrained models: version, source, and how many final models of each system use them as encoder.}
