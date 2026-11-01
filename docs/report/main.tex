@@ -24,15 +24,15 @@ Only 12\% of the training clips have verified timestamps, and the test set mixes
 Our key observation is that Vaani transcribers already mark noise events with tags in the transcripts.
 We use these tags to constrain a teacher ensemble's pseudo-labels, which improves label quality by 0.04--0.05 Combined and labels 305k extra clips.
 Each model's output is read two ways, by thresholding its activity curve and by an event-proposal head, and a weighted vote over all readouts beats the better single readout by 0.012--0.019 on held-out clips.
-Our main system is a unified detector: five models trained on balanced natural and synthetic data serve every clip and score 1.6114 on the test set.
-A routed variant that first separates the organisers' mixtures by their peak level, our final submission, scores 1.6168.
+A unified system, in which five models trained on balanced natural and synthetic data serve every clip, scores 1.6114 on the test set.
+A routed system, which first separates the organisers' mixtures by their peak level, scores 1.6168.
 \end{abstract}
 
 \begin{figure*}[t]
 \centering\footnotesize
 \resizebox{\textwidth}{!}{\begin{tikzpicture}[box/.style={draw, rounded corners, align=center, inner sep=3pt, fill=white}, >={Stealth[length=2mm]}, lab/.style={font=\bfseries\small, anchor=west}]
 % (a) unified system
-\node[lab] at (-0.2,2.75) {(a) Unified system (our main method): one model set and one vote for every clip};
+\node[lab] at (-0.2,2.75) {(a) Unified system: one model set and one vote for every clip};
 \node[box, fill=blue!6] (nat) at (1.6,1.35) {natural clips: Gold, Silver and\\\textbf{tag-constrained pseudo-labels}};
 \node[box, fill=orange!8] (syn) at (1.6,0.2) {synthetic mixtures,\\exact labels};
 \node[box] (blend) at (5.0,0.775) {balanced\\blend};
@@ -47,7 +47,7 @@ A routed variant that first separates the organisers' mixtures by their peak lev
 \draw[->] (st) -- (ro); \draw[->] (ro) -- (vote); \draw[->] (vote) -- (ev);
 \draw[gray!50] (-0.2,-0.45) -- (20.5,-0.45);
 % (b) routed system
-\node[lab] at (-0.2,-0.9) {(b) Routed (separate) system (our final submission): mixtures and natural clips get their own models};
+\node[lab] at (-0.2,-0.9) {(b) Routed system: mixtures and natural clips get their own models};
 \node[box] (clip2) at (0.9,-2.45) {test clip};
 \node[box, fill=yellow!10] (rt) at (3.6,-2.45) {\textbf{router}: mixture if\\peak $|x|<0.995$};
 \draw[->] (clip2) -- (rt);
@@ -174,10 +174,10 @@ A \emph{long-span rule} lets long clusters, which single readouts often split, p
 \textbf{C. Localisation pretext.}
 General audio encoders recognise sounds but were not trained to time them, so before fine-tuning BEATs and Dasheng spend 10k steps finding 0--3 ESC-50 sounds pasted into untranscribed Vaani audio; the share of pasted events they localise within the competition's tolerance rises from 0.059 to 0.706 (BEATs) and 0.728 (Dasheng).
 
-\textbf{D. Unified system (our main method).}
+\textbf{D. Unified system.}
 Five students (three Whisper-medium, one BEATs with the pretext, one WavLM), trained on roughly equal shares of natural clips with tag-constrained labels and synthetic mixtures with exact labels, serve every clip through one weighted vote over their ten readouts, with no knowledge of the clip's type (Fig.~\ref{fig:sys}a).
 
-\textbf{E. Routed system (our final submission).}
+\textbf{E. Routed system.}
 The organisers' mixtures are peak-normalised to 0.99 while natural clips reach full scale, so a peak test ($|x|<0.995$) separates them exactly, a property of the release rather than of the audio.
 Mixtures go to four synthetic specialists (one also sees the enhancement network's noise estimate) and a gate that drops spans more than 30\,dB below the clip's loudest frames; natural clips go to six models with the long-span rule from 4\,s (Fig.~\ref{fig:sys}b).
 
