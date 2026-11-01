@@ -92,6 +92,21 @@ Reproducibility, checked from raw audio with the released checkpoints:
 
 Batch composition changes the padded forward pass at the millisecond level, so the system files pin each member's batch size to the one used for the submissions.
 
+## Reproducing the vote ablation (Table III)
+
+The vote rows of Table III use the five router-free models of submission 210 (`stx374`, `stx365`, `u373_mix`, `st137`, `st390`), none of which trained on our validation split.
+Decode a labelled clip set with both readouts of each model, then fuse and score:
+
+```bash
+for m in stx374 stx365 u373_mix st137 st390; do for rt in natural epnraw; do
+  (cd src && python3 predict.py --ckpt ../checkpoints/$m.pt --audio-dir AUDIO_DIR --config ../configs/decode/postproc_${m}_${rt}.json \
+     --refiner ../checkpoints/refiner_$m.pt --batch-size 16 --out ../outputs/ablation/${m}_${rt}/pred.zip)
+done; done
+python3 scripts/ablate_vote.py --manifest data/splits/val.jsonl --decodes outputs/ablation
+```
+
+`AUDIO_DIR` holds the manifest's clips as `<clip_id>.wav`. On our validation split this prints 1.1583 for one model's proposal readout, 1.1945 for a five-model vote, 1.2137 for the vote over both readouts and 1.2195 with the long-span rule.
+
 ## The two systems
 
 **Router-free** (`configs/system_generic_224.json`; `configs/system_generic.json` adds the long-span rule).

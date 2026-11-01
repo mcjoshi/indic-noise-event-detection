@@ -19,14 +19,12 @@
 \maketitle
 
 \begin{abstract}
-We detect the onset and offset of every non-speech noise event in Vaani speech clips (Combined = event F1 + segment Dice), with scarce verified labels and a test set that mixes natural recordings with synthetic mixtures.
-Two systems share three components.
-First, the event tags in Vaani transcripts fix how many events a teacher ensemble may label in a clip, and roughly where, which improves pseudo-label quality on a 305k-clip transcribed pool (+0.050 against Gold).
-Second, BEATs and Dasheng encoders learn event boundaries through a localisation pretext task on unlabelled Vaani audio.
-Third, every model is decoded twice, by a threshold with a learned boundary refiner and by an event-proposal head, and a weighted vote fuses all decodes.
-Our router-free system runs five students trained on blended natural and synthetic data on every clip and scores 1.6114; nothing in it reads a clip's domain, so one model set and one vote serve natural recordings and mixtures alike.
-Our routed system detects the organisers' mixtures by their peak level and sends them to synthetic specialists; it placed second with 1.6168, 0.0004 behind first.
-Both reach event F1 0.53 on natural clips and 0.99 on mixtures.
+We detect when non-speech noise events start and end in crowd-sourced Indian speech (Vaani), scored by Combined, the sum of event F1 and segment Dice (maximum 2).
+Only 12\% of training clips have verified timestamps, and the test set mixes natural recordings with synthetic mixtures.
+Our key observation is that Vaani transcribers already mark noise events with tags in the transcripts.
+We use these tags to constrain a teacher ensemble's pseudo-labels (+0.04--0.05 Combined against held-out clips with verified timestamps, for 305k extra clips), read each model's output two ways (thresholding its activity curve, and reading events from a proposal head), and fuse all readouts with a weighted vote, which beats the better single readout by 0.012--0.019 on clips held out from training.
+Our main system is router-free: five models trained on balanced natural and synthetic data serve every clip and score 1.6114 on the test set.
+A routed variant that separates the organisers' mixtures by their peak level placed second at 1.6168, 0.0004 behind first.
 Code: \url{https://github.com/mcjoshi/indic-noise-event-detection}; checkpoints: \url{https://huggingface.co/manishjoshiai/indic-noise-event-detection}.
 \end{abstract}
 
@@ -38,7 +36,7 @@ Code: \url{https://github.com/mcjoshi/indic-noise-event-detection}; checkpoints:
 \node[box] (u2) at (10.6,1.25) {10 decodes, weighted vote\\(BEATs 1.0, others 0.5; keep $\geq$2.5)};
 \node[box] (r1) at (4.4,-1.25) {\textbf{Routed}:\\peak $|x|<0.995$?};
 \node[box, anchor=west] (rs) at (6.6,-0.6) {mixtures: 4 specialists, 3-of-4 fusion, silence gate};
-\node[box, anchor=west] (rn) at (6.6,-1.9) {natural: 6 models $\times$ 2 decodes, vote $\geq$4/12 (long $\geq$3/12)};
+\node[box, anchor=west] (rn) at (6.6,-1.9) {natural: 6 models $\times$ 2 decodes,\\unweighted vote $\geq$4/12 (long $\geq$3/12)};
 \node[box] (o) at (15.0,0) {Events};
 \draw[->] (core.east) -- ++(0.35,0) |- (u1.west);
 \draw[->] (core.east) -- ++(0.35,0) |- (r1.west);
@@ -49,7 +47,7 @@ Code: \url{https://github.com/mcjoshi/indic-noise-event-detection}; checkpoints:
 \draw[->] (rs.east) -| ([xshift=-4mm]o.west) -- (o.west);
 \draw[->] (rn.east) -| ([xshift=-4mm]o.west) -- (o.west);
 \end{tikzpicture}}
-\caption{Both systems are built on the same core. The router-free system (top) runs one model set and one vote on every clip; the routed system (bottom) separates the organisers' mixtures by peak level and serves each domain with its own models.}
+\caption{Overview. Both systems share the core (left). The router-free system (top, our main method) runs one model set and one vote on every clip; the routed system (bottom, our leaderboard entry) splits clips by peak level and serves each kind with its own models.}
 \label{fig:sys}
 \end{figure*}
 
@@ -57,7 +55,7 @@ Code: \url{https://github.com/mcjoshi/indic-noise-event-detection}; checkpoints:
 \centering\footnotesize
 \begin{minipage}[t]{0.49\textwidth}
 \centering
-\begin{tikzpicture}[x=6.2mm, y=5mm, >={Stealth[length=1.6mm]},
+\begin{tikzpicture}[x=6.2mm, y=3.8mm, >={Stealth[length=1.6mm]},
   cand/.style={draw, fill=#1, minimum height=3.2mm, inner sep=0pt, font=\scriptsize},
   lab/.style={anchor=east, font=\scriptsize}]
 \node[anchor=west, font=\bfseries\footnotesize] at (-2.9,5.6) {(a) Tag-constrained pseudo-labels};
@@ -81,7 +79,7 @@ Code: \url{https://github.com/mcjoshi/indic-noise-event-detection}; checkpoints:
 \end{minipage}\hfill
 \begin{minipage}[t]{0.49\textwidth}
 \centering
-\begin{tikzpicture}[x=6.2mm, y=5mm, >={Stealth[length=1.6mm]}, lab/.style={anchor=east, font=\scriptsize}]
+\begin{tikzpicture}[x=6.2mm, y=3.8mm, >={Stealth[length=1.6mm]}, lab/.style={anchor=east, font=\scriptsize}]
 \node[anchor=west, font=\bfseries\footnotesize] at (-2.9,5.6) {(b) Two decodes and a weighted vote};
 \foreach \y/\n/\w in {4.6/Whisper T/0.5, 3.9/Whisper P/0.5, 3.2/BEATs T/1.0, 2.5/BEATs P/1.0, 1.8/WavLM T/0.5, 1.1/WavLM P/0.5} {
   \node[lab] at (-0.1,\y) {\n\ \textcolor{gray}{(\w)}};
@@ -93,186 +91,169 @@ Code: \url{https://github.com/mcjoshi/indic-noise-event-detection}; checkpoints:
 \draw[->] (0,0.55) -- (10,0.55) node[right, font=\scriptsize] {time};
 \node[lab] at (-0.1,-0.1) {vote};
 \fill[green!45] (0.8,-0.32) rectangle (1.9,0.12); \node[font=\scriptsize, anchor=north] at (1.35,-0.4) {4.0 $\geq$ 2.5};
-\fill[green!45] (2.9,-0.32) rectangle (8.2,0.12); \node[font=\scriptsize, anchor=north] at (5.55,-0.4) {long span: 2.0 $\geq$ 1.5 (optional rule)};
+\fill[green!45] (2.9,-0.32) rectangle (8.2,0.12); \node[font=\scriptsize, anchor=north] at (5.55,-0.4) {long span: 2.0 $\geq$ 1.5};
 \node[font=\scriptsize, red!70!black] at (9.25,-0.1) {$\times$};
 \end{tikzpicture}
 \end{minipage}
-\caption{The shared core, schematically. (a) Tag count fixes how many events are kept; each tag's position in the text gives a time prior, and Hungarian matching keeps one teacher candidate per tag. (b) T = threshold decode with refiner, P = proposal decode (two of the three Whisper students omitted); a span survives at summed weight 2.5, long spans at 1.5 under the optional rule, and an isolated span (0.5) is dropped.}
+\caption{The two core ideas. (a) Tags fix how many teacher candidates become labels; Hungarian matching on time and support picks them (votes out of 10 teacher decodes). (b) T = threshold readout with refiner, P = proposal readout; three of the five models shown. The short event has all six readouts (4.0 $\geq$ 2.5); the long one only Whisper P, BEATs P and WavLM T (2.0), kept by the optional long-span rule (1.5, not in the scored router-free file); the isolated span (0.5) is dropped. Not to scale.}
 \label{fig:novel}
 \end{figure*}
 
-\section{Training Data and Preprocessing}
+\section{Introduction and Novelty}
+Vaani is a crowd-sourced corpus of Indian speech recorded on phones in homes, streets and fields, so clips are full of non-speech noise (horns, animals, babies, music, breathing); the task is to give the onset and offset of every such event, without naming its category.
+It is hard because only 12\% of the 90,635 training clips have verified timestamps, because the test set mixes natural recordings with synthetic mixtures (speech plus pasted noise) that behave very differently, and because on natural recordings even strong models place event edges poorly (event F1 near 0.53, against 0.99 on mixtures).
+
+Our starting observation is that Vaani transcribers already mark noise events in the transcripts with tags such as \texttt{<horn>}\,\dots\,\texttt{</horn>}, which say that an event happened and roughly where, but not exactly when.
+We turn this free, weak signal into training labels and build two complete systems around it (Fig.~\ref{fig:sys}).
+
+\textbf{Novelty.}
+\begin{itemize}
+\item \emph{Tag-constrained pseudo-labels} (Sec.~III-C, Fig.~\ref{fig:novel}a). A teacher ensemble proposes candidate events; the tags' count says how many events the clip has and their positions say which candidates survive, by matching each tag to one candidate on time and support (how many teacher decodes agree). This raises pseudo-label quality by +0.04--0.05 Combined and labels 305k transcribed clips.
+\item \emph{Two complementary decodes per model and a duration-aware weighted vote} (Sec.~III-B, Fig.~\ref{fig:novel}b). Every model is read out twice, by a thresholded activity curve whose edges a learned refiner corrects and by an event-proposal head; fusing the two readouts of each model adds 0.012--0.019 over the better single readout, on top of what an ensemble of the same models gains.
+\item \emph{A domain-blind, router-free detector} (Sec.~III-E). Five models trained on balanced natural and synthetic data serve every clip with one vote, without detecting the clip's kind, 0.0054 below our routed entry.
+\end{itemize}
+
+\section{Task, Data and Rules}
 \textbf{Task and metric.}
-Each clip may contain several non-speech noise events.
-Event F1 counts a prediction as correct when both its onset and offset lie within $\max(0.2\,d, 0.05)$\,s of a reference event of duration $d$~\cite{mesaros}; segment Dice compares 10\,ms frames; Combined is their sum (maximum 2).
+Clips are 16\,kHz speech, 1.4--21\,s long (median 6.6\,s).
+A predicted event matches a reference event when both its onset and offset lie within $\max(0.2\,d, 0.05)$\,s of it ($d$ = reference duration); event F1 counts matches over all events~\cite{mesaros}.
+Segment Dice compares predicted and reference activity on 10\,ms frames, averaged over clips.
+The score, Combined, is their sum (maximum 2).
+Phase 2, the final test round, has 5,517 clips (3,437 natural, 2,080 synthetic) scored on a public leaderboard of each team's best submission.
 
-\textbf{Competition data.}
-The release (\url{ARTPARK-IISc/Vaani-Noise-Event-Dataset}) contains 90,635 labelled clips (154.6\,h): 11,111 Gold clips with verified timestamps, 61,640 Silver and 17,884 Bronze.
-We hold out a speaker-disjoint split of 2,005 Gold clips (4.0\,h) for selection, removing 1,163 further clips of the same speakers from training; three late models also train on it (Sec.~III).
-The organisers' validation release adds 1,806 natural and 695 synthetic clips, which several models also train on (Sec.~III).
-Audio is 16\,kHz mono; models see random crops of up to 15\,s as 128-bin log-mel features on a 10\,ms grid.
+\textbf{Training data.}
+The competition release (\url{ARTPARK-IISc/Vaani-Noise-Event-Dataset}) has three label tiers: 11,111 Gold clips with verified timestamps, 61,640 Silver clips with unverified timestamps, and 17,884 Bronze clips that only say which noise categories occur.
+We hold out 2,005 Gold clips of distinct speakers as our validation split.
+The organisers also released 1,806 natural and 695 synthetic labelled validation clips, which we use as training data too (four natural models train on the natural ones, all synthetic and router-free models on the synthetic ones).
+External data: 321,728 transcribed Vaani clips (\url{ARTPARK-IISc/Vaani-transcription-part}~\cite{vaani}; tags only, no timestamps), 207,268 untranscribed Vaani clips (\url{ARTPARK-IISc/Vaani}), ESC-50 sound events~\cite{esc50}, and the noisy/clean pairs of Track 2 (the datathon's speech-enhancement task), used only to train an enhancement U-Net.
+Every competition clip, and every recording behind a validation or test clip, was removed from the transcribed pool; the untranscribed pool, used only without labels, was filtered by clip.
+No test labels, test pseudo-labels or manual annotation were used; unlabelled test audio was used twice: its acoustic statistics guided the background of our earliest synthetic mixtures, and its peak levels confirmed the router described in Sec.~III-E.
 
-\textbf{External data.}
-(i) 321,728 transcribed clips of \url{ARTPARK-IISc/Vaani-transcription-part}~\cite{vaani} (539\,h), 305,190 of which received tag-constrained labels, excluding every competition clip and every recording that contains a validation or test clip;
-(ii) 207,268 untranscribed clips of \url{ARTPARK-IISc/Vaani} (304\,h), excluding competition clips by clip ID, used for the pretext task and early pseudo-labels;
-(iii) ESC-50~\cite{esc50} (\url{ashraq/esc50} mirror, CC BY-NC) events for mixtures and the pretext task;
-(iv) the Track 2 noisy/clean training pairs, only to train the enhancement U-Net (Table~\ref{tab:pre}).
-No test labels, test pseudo-labels or manual annotation were used.
+\section{Method}
+\textbf{A. Base model.}
+Every model is a convolutional recurrent network (CRNN)~\cite{crnn} on a 10\,ms grid.
+Log-mel convolutions are combined with the frames of one pretrained encoder (Table~\ref{tab:pre}), and a bidirectional GRU predicts, per frame, event activity, onset and offset likelihoods, and, through an Event Proposal Network (EPN)~\cite{epn}, the distance to the start and end of the current event.
+The loss combines frame and boundary cross-entropy with an IoU loss on the proposals.
+Gold labels weigh 1, Silver 0.5--0.9 and pseudo-labels 0.35--0.7 (set per model on validation); Bronze clips get tag-constrained labels from their transcripts (17,373 of 17,884); the rest only supervise a clip-level loss.
+Each final model ends a short chain: a model with a frozen encoder, its fine-tuned copy, and a one-epoch \emph{student} trained on labels produced by a \emph{teacher}, an ensemble of earlier models~\cite{noisystudent,cpjku}; a three-model teacher made the earlier labels and a five-model teacher those of the final students.
 
-\textbf{Tag-constrained pseudo-labels.}
-Vaani transcribers mark audible events with paired tags such as \texttt{<horn>}\,\dots\,\texttt{</horn>}; on our held-out Gold split the number of event tags equals the number of verified events on 95.8\% of clips.
-A teacher ensemble proposes candidate spans with vote counts (IoU 0.6 clustering, median edges).
-We discard non-event tags (\texttt{<noise>}, \texttt{<PAUSE>}, \texttt{[unintelligible]}), map each remaining tag's relative character position to a time prior, and assign exactly one candidate per tag by Hungarian matching on vote support and distance to the prior (Fig.~\ref{fig:novel}a); unmatched tags are left empty.
-With the first-round teacher (three models, six decodes) this raises label quality against Gold from 1.1903 to 1.2403 Combined; the five-model teacher used for the final students reaches 1.2578.
-The labels cover the transcribed clips and the Bronze tier; Silver edges move onto a fused span when the two overlap at IoU $\geq$0.3.
+\textbf{B. Two decodes and the vote.}
+A \emph{decode} (or readout) turns a model's frame outputs into events.
+The threshold decode thresholds and smooths the activity curve; a small boundary refiner, trained on Gold event edges displaced by up to $\pm$250\,ms, then moves each predicted edge to its most likely true position.
+The proposal decode instead reads whole events from the EPN.
+The two decodes make different errors, so voting over both helps (Table~\ref{tab:abl}).
+A vote fuses the decodes of several models: overlapping spans (IoU $\geq$0.6) form a cluster, each decode adds its model's weight, and a cluster whose summed weight passes a threshold becomes an event with median edges (Fig.~\ref{fig:novel}b). A \emph{long-span rule} lets long clusters, which single decodes often split, pass with less weight; the routed system uses it from 4\,s, while for the router-free system (from 6\,s) it came after our scored submission.
 
-\textbf{Synthetic mixtures.}
-We insert up to six events, non-overlapping except in our earliest ESC-50 set, into the event-free stretches of Gold training clips, kept at natural level and peak-normalised afterwards.
-Events come from ESC-50 folds 1--4 and Vaani Gold events (168k clips, 6--12\,dB), or from 2,213 noise events obtained by subtracting the clean references supplied with the organisers' synthetic validation clips (48k clips, $-6$ to 13\,dB).
-Router-free students train on roughly balanced blends of natural and synthetic clips (147k, 200k or 240k rows; the 200k blend adds our validation split and the organisers' natural clips).
-Augmentation: random crops, threefold Gold oversampling for natural-route models, mixup ($\alpha=0.2$, max-union targets) for the BEATs and Dasheng specialists, and shift, gain and noise views for a consistency loss.
+\textbf{C. Tag-constrained pseudo-labels.}
+A \emph{teacher} is a set of trained models whose decodes are fused into candidate events, each with a vote count.
+For a transcribed clip, we keep the event tags (not \texttt{<noise>}, \texttt{<PAUSE>} or \texttt{[unintelligible]}) and turn each tag into a time prior: a tag occupying the fraction $[a,b]$ of the tag-free text predicts an event centred at $t_{\text{tag}} = \frac{a+b}{2}\,d$ for a clip of duration $d$.
+Hungarian matching then assigns each tag exactly one candidate centred at $t_{\text{cand}}$, minimising $3\,|t_{\text{cand}}-t_{\text{tag}}|/d - v/v_{\max}$ (time distance against vote support $v$, with $v_{\max}$ the number of teacher decodes; the factor 3 was chosen on validation); unmatched candidates are discarded, and a tag with no candidate adds no event (Fig.~\ref{fig:novel}a).
+On Gold clips, whose transcripts carry the same tags, the tag count equals the verified event count 95.8\% of the time, so the count says how many events to keep and the positions say which.
+Scored against our 2,005 held-out Gold clips (which no teacher trained on), the constraint lifts a three-model teacher's labels from 1.1903 to 1.2415 Combined and the five-model teacher's from 1.2145 to 1.2578; for scale, our systems score 1.24--1.25 Combined on natural test clips.
+These labels cover 305k transcribed clips and the Bronze clips that have transcripts.
 
-\section{Proposed Method}
-\textbf{Architecture.}
-Every model is a CRNN~\cite{crnn} on the 10\,ms grid: seven Conv--BN--GELU blocks pooled over frequency only, concatenated with projected encoder frames (LayerNorm, linear to 256, interpolated to 10\,ms), then a two-layer BiGRU.
-Whisper and WavLM features are a learned softmax-weighted sum of all layers~\cite{superb}; BEATs and Dasheng use their last layer.
-Heads predict frame activity, onset/offset bumps, a second overlap layer, seven auxiliary categories, a 100\,ms occupancy branch, and an Event Proposal Network (EPN)~\cite{epn} in which every active frame regresses its distance to the onset and offset of its event.
+\textbf{D. Pretext task and synthetic mixtures.}
+General audio encoders recognise sounds but were not trained to time them, so before fine-tuning BEATs and Dasheng spend 10k steps finding 0--3 ESC-50 sounds pasted into unlabelled Vaani audio; the share of pasted events they localise within the competition's tolerance rises from 0.059 at initialisation to 0.706 (BEATs) and 0.728 (Dasheng).
+For the synthetic clips we build mixtures like the organisers': up to six ESC-50, Vaani or organiser noise events (2,213, recovered from their synthetic validation clips by subtracting clean references) pasted into event-free stretches of Gold clips, then peak-normalised.
 
-\textbf{Losses and training.}
-The objective sums frame BCE on soft coverage targets (non-Gold background down-weighted), onset/offset BCE, a clip-level multiple-instance BCE (the only signal taken from Bronze), category BCE and a duration-normalised $1-\mathrm{IoU}$ EPN loss (weight 2).
-Most models add a Gold term on frames inside events of at least 4\,s (weight 1, or 3 in two models), and some add soft Dice or mean-teacher consistency~\cite{meanteacher}.
-Gold carries weight 1, Silver 0.5--0.9 and pseudo-labels 0.35--0.7.
-We use AdamW (weight decay $10^{-2}$), warmup and cosine decay, bf16, gradient clipping 5 and EMA 0.999, and select checkpoints on validation Combined.
-Encoders are fine-tuned at a tenth of the head rate (0.85 layer-wise decay for WavLM, BEATs and Dasheng).
-Training proceeds in chains in the spirit of noisy-student self-training~\cite{noisystudent} and multi-stage ensemble distillation for SED~\cite{cpjku}: a frozen-encoder parent, an unfrozen child, then a one-epoch student on teacher-labelled data; the 15 final models descend from 14 ancestors, all released with their exact configurations.
+\textbf{E. Two systems.}
+\emph{Router-free (our main method).}
+Five students (three Whisper-medium, one BEATs with the pretext, one WavLM) are trained on roughly equal shares of natural clips with tag-constrained labels and synthetic mixtures with exact labels.
+One vote fuses their ten decodes on every clip (Whisper and WavLM weigh 0.5, BEATs 1.0; keep at 2.5 of 6).
+\emph{Routed (our leaderboard entry).}
+The organisers' mixtures are peak-normalised to 0.99 while natural clips reach full scale, so a peak test ($|x|<0.995$) separates them exactly; this exploits a property of the release rather than the audio.
+Mixtures go to four synthetic specialists (three of four votes, then a gate dropping near-silent spans) and natural clips to six models with an unweighted vote (Fig.~\ref{fig:sys}).
 
-\textbf{Localisation pretext.}
-BEATs and Dasheng first spend 10k steps localising 0--3 ESC-50 events pasted into 8\,s crops of untranscribed Vaani audio; the boundary hit rate on held-out inserts rises from 0.059 to 0.706 (BEATs) and 0.728 (Dasheng).
-
-\textbf{Two decodes per model.}
-The threshold decode applies a tuned threshold, median filter, merge gap, minimum duration and edge offsets; a small Conv1d refiner then predicts a 101-bin distribution over $\pm$250\,ms around each endpoint from the model's own curves, and the endpoint moves to its expected value.
-The proposal decode selects EPN intervals greedily by presence and suppresses overlaps; the two decodes fail differently (Fig.~\ref{fig:novel}b).
-
-\textbf{Router-free system.}
-Five students (three Whisper-medium, one BEATs-pretext, one WavLM) run on every clip.
-Their ten decodes are clustered at IoU 0.6 with median edges; Whisper and WavLM decodes weigh 0.5 and BEATs decodes 1.0 (chosen on validation), and a cluster survives at summed weight 2.5 of 6.
-Nothing in this system reads a clip's domain: one model set, one decode configuration per model and one vote serve natural recordings and mixtures alike.
-An optional long-span rule keeps clusters of at least 6\,s at weight 1.5 (IoU 0.45); it improved F1 and Dice on both halves of our validation split (measured on the previous model set) but has no board score.
-
-\textbf{Routed system.}
-The organisers' mixtures are peak-normalised to 0.99 while natural clips reach full scale: on the test set 2,080 clips peak at 0.99 and 3,437 at 1.0, exactly the stated subset sizes, a property of the release that a peak test ($|x|<0.995$) exploits.
-Mixtures go to four specialists (BEATs with an enhancement-residual input channel, two Dasheng seeds, Whisper) fused at three of four votes~\cite{wbf}, followed by a gate that drops spans more than 30\,dB below the clip's 95th-percentile level.
-Natural clips are fused from six models $\times$ two decodes, keeping clusters with four of twelve votes, or three when the span is at least 4\,s (IoU 0.45).
 
 \begin{table}[t]
-\caption{Pretrained models (Hugging Face IDs unless noted) and the number of routed (R) and router-free (U) models using each.}
+\caption{Pretrained models: version and source (Hugging Face IDs unless noted) and how many routed (R) and router-free (U) final models use each as encoder.}
 \label{tab:pre}
 \centering\footnotesize
-\begin{tabular}{@{}>{\raggedright}p{2.75cm}>{\raggedright}p{3.75cm}>{\raggedright\arraybackslash}p{1.7cm}@{}}
+\begin{tabular}{@{}>{\raggedright}p{2.45cm}>{\raggedright}p{3.35cm}>{\raggedright\arraybackslash}p{2.35cm}@{}}
 \toprule
 Model & Version / source & Role \tabularnewline
 \midrule
 Whisper-medium~\cite{whisper} & \url{openai/whisper-medium} & 4 R, 3 U \tabularnewline
 WavLM-base-plus~\cite{wavlm} & \url{microsoft/wavlm-base-plus} & 1 R, 1 U \tabularnewline
-HuBERT-large~\cite{hubert} & \url{facebook/hubert-large-ll60k} & WavLM ancestor \tabularnewline
-BEATs iter3+ AS2M~\cite{beats} & \url{BEATs_iter3_plus_AS2M.pt}, microsoft/unilm & 3 R, 1 U; pretext \tabularnewline
-Dasheng base~\cite{dasheng} & pip \url{dasheng} 0.0.9 (Xiaomi) & 2 R; pretext \tabularnewline
-Enhancement U-Net & ours (Track 2 pairs), released & 1 R, residual \tabularnewline
+HuBERT-large~\cite{hubert} & \url{facebook/hubert-large-ll60k} & head init.\ for WavLM \tabularnewline
+BEATs iter3+~\cite{beats} & microsoft/unilm & 3 R, 1 U \tabularnewline
+Dasheng base~\cite{dasheng} & pip \url{dasheng} 0.0.9 & 2 R \tabularnewline
+Enhancement U-Net & ours (Track 2 pairs) & 1 R (extra input) \tabularnewline
 \bottomrule
 \end{tabular}
 \end{table}
 
-\section{Results and Conclusion}
-
 \begin{table}[t]
-\caption{Phase 2 test set, event F1 / Dice overall and per subset; -- = not shown. $^\dagger$Derived: Dice as the clip-weighted mean of subset Dice (exact for our routed entry), F1 = Combined $-$ Dice.}
+\caption{Phase 2 test set (5,517 clips). Natural / Synthetic give event F1 / Dice on each subset; -- = not published or not logged. $^\dagger$Both derived: overall Dice is the clip-weighted mean of the subset Dice (exact for our routed entry); F1 = Combined $-$ Dice.}
 \label{tab:main}
-\centering\footnotesize
+\centering\footnotesize\setlength{\tabcolsep}{2.6pt}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
 System & Combined & F1 / Dice & Natural & Synthetic \\
 \midrule
-1st place & 1.617289 & .789 / .828 & -- & -- \\
-Ours, routed (2nd) & 1.616847 & .790 / .827 & .526 / .726 & .997 / .992 \\
-3rd place & 1.616833 & .789 / .828 & -- & -- \\
-Ours, router-free & 1.6114 & .793 / .819$^\dagger$ & .526 / .715 & .993 / .990 \\
+Median of 82 teams & 1.0831 & -- & -- & -- \\
+Ours, single model (Sept.) & 1.5883 & -- & .484 / .708 & .996 / .992 \\
+1st place & 1.6173 & .789 / .828 & -- & -- \\
+\textbf{Ours, routed (2nd)} & \textbf{1.6168} & .790 / .827 & .526 / .726 & .997 / .992 \\
+3rd place & 1.6168 & .789 / .828 & -- & -- \\
+\textbf{Ours, router-free} & \textbf{1.6114} & .793 / .819$^\dagger$ & .526 / .715 & .993 / .990 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{table}[t]
-\caption{Component evidence. L = pseudo-label quality vs Gold, V = our validation, O = organisers' natural clips, B = Phase 2 board; Single = the only change between the two runs.}
+\caption{Evidence per idea. L = label quality vs held-out Gold, V = our validation, O = organisers' natural clips. $^\dagger$Five released router-free models, none trained on V; one saw 2 of the 1,806 O clips. $^\ddagger$95\% speaker-bootstrap interval above zero (\texttt{scripts/ablate\_vote.py}).}
 \label{tab:abl}
 \centering\footnotesize
-\begin{tabular}{@{}>{\raggedright}p{4.7cm}ccr@{}}
+\begin{tabular}{@{}>{\raggedright}p{5.0cm}cr@{}}
 \toprule
-Change (base) & Metric & Single & $\Delta$ \tabularnewline
+Comparison (A vs B) & On & $\Delta$ Combined \tabularnewline
 \midrule
-\multicolumn{4}{@{}l}{\emph{Shared core}} \tabularnewline
-Tag count + position matching (teacher) & L & yes & +0.050 \tabularnewline
-Tag count only, top-$N$ (teacher) & L & yes & +0.003 \tabularnewline
-Student on tag vs plain labels (1 model) & V & yes & +0.0036 \tabularnewline
-Transcribed Vaani audio added (1 model) & V & yes & +0.0052 \tabularnewline
-No proposal decode, 4 of 6 teachers (6-model teacher) & L & yes & $-$0.014 \tabularnewline
-Localisation pretext (1 BEATs model) & V / O & yes & $-$0.003 / +0.017 \tabularnewline
+\multicolumn{3}{@{}l}{\emph{Tag-constrained pseudo-labels}} \tabularnewline
+Tags vs none, 3-model teacher & L & +0.051 \tabularnewline
+Tags vs none, 5-model teacher & L & +0.043 \tabularnewline
+Tag count only vs none, 3-model teacher & L & +0.003 \tabularnewline
+Student on tag vs plain labels (1 seed) & V & +0.0036 \tabularnewline
 \midrule
-\multicolumn{4}{@{}l}{\emph{Router-free system}} \tabularnewline
-30\,dB gate on every clip & V & yes & $-$0.017 \tabularnewline
-Long-span rule (both halves) & V & yes & +0.003 Dice \tabularnewline
+\multicolumn{3}{@{}l}{\emph{Two readouts and the vote} (columns: V / O)} \tabularnewline
+$^\dagger$Vote of 5 models vs 1 model (proposal) & V / O & +0.036 / +0.036 \tabularnewline
+$^{\dagger\ddagger}$Both readouts vs proposal-only vote & V / O & +0.019 / +0.012 \tabularnewline
+$^\dagger$Both readouts vs threshold-only vote & V / O & +0.028 / +0.028 \tabularnewline
+$^{\dagger\ddagger}$Long-span rule vs none & V / O & +0.006 / +0.004 \tabularnewline
 \midrule
-\multicolumn{4}{@{}l}{\emph{Routed system}} \tabularnewline
-Whisper synthetic specialist & B & yes & +0.0006 \tabularnewline
-Long clusters: 3 votes, IoU 0.45 & B & 2 steps & +0.0005 \tabularnewline
-Routed vs router-free (models differ) & B & no & +0.0054 \tabularnewline
+\multicolumn{3}{@{}l}{\emph{Other components}} \tabularnewline
+Pretext task vs none (1 BEATs) & V / O & $-$0.003 / +0.017 \tabularnewline
 \bottomrule
 \end{tabular}
 \end{table}
 
-\begin{figure}[t]
-\centering\footnotesize
-\begin{tikzpicture}
-\begin{axis}[width=\columnwidth, height=3.2cm, ymin=1.600, ymax=1.619, xmin=0.6, xmax=6.8,
-  xtick={1,...,6}, xticklabels={blended\\students, relabelled\\+BEATs, weighted\\vote, Whisper\\at 0.5, 240k\\blend, +val.\\clips},
-  xticklabel style={font=\scriptsize, align=center}, yticklabel style={font=\scriptsize}, scaled y ticks=false, yticklabel={\pgfmathprintnumber[fixed, fixed zerofill, precision=3]{\tick}},
-  ylabel={Combined}, ylabel style={font=\scriptsize}, grid=major, grid style={gray!20}, legend style={font=\scriptsize, at={(0.5,1.03)}, anchor=south, draw=none}, legend columns=2]
-\addplot[thick, blue!70!black, mark=*, mark size=1.5pt, nodes near coords, point meta=explicit symbolic, every node near coord/.style={font=\tiny, anchor=south}, forget plot] coordinates {(1,1.6024)[1.6024] (2,1.6050)[1.6050] (3,1.6068)[1.6068] (4,1.6089)[1.6089] (5,1.6100)[1.6100] (6,1.6114)[1.6114]};
-\addplot[dashed, red!70!black, domain=0.6:6.8] {1.6168}; \addlegendentry{routed (2nd), 1.6168}
-\addplot[dotted, thick, black, domain=0.6:6.8] {1.6173}; \addlegendentry{1st place, 1.6173}
-\end{axis}
-\end{tikzpicture}
-\caption{Router-free system on the Phase 2 board, one submission per point. Steps 2, 3 and 5 change several factors at once (step 3 also relabels the BEATs student; step 5 also re-weights one Whisper student).}
-\label{fig:chain}
-\end{figure}
-
+\section{Results}
 \textbf{Leaderboard.}
-In Table~\ref{tab:main} the routed system is second, 0.0004 below first and 0.000014 above third; both gaps lie inside the $\pm$0.002 spread between seeds of one model slot, so the order of the top three is not meaningful.
-The router-free system is 0.0054 lower (fourth as a separate entry; fourth place 1.611179), yet its derived event F1 (0.793) is above each of the top three and its natural F1 equals the routed system's: the gap is Dice (0.819 vs 0.827), mostly on natural clips, where the systems also differ in models and vote rule.
+Of 82 ranked teams (median 1.083, tenth place 1.581), our routed system is second, 0.0004 below first and 0.000014 above third (1.617289, 1.616847, 1.616833); we measured a $\pm$0.002 spread between seeds of one model, so the top three are effectively tied.
+Our router-free submission scored 0.0054 lower (fourth if ranked) with a higher event F1 (0.793, derived): its gap is Dice, the frame overlap, driven by edge placement.
 
-\textbf{Component evidence.}
-In Table~\ref{tab:abl} the tag gain comes from position matching, not counts alone; for a single student, tag labels add 0.0036 and the extra transcribed audio 0.0052.
+\textbf{What each idea contributes.}
+In Table~\ref{tab:abl}, tag positions, not counts, carry the label gain for both teachers, and a student on tag-constrained labels beats one on plain labels from the same audio (+0.0036, one seed).
+On held-out clips, voting over five models adds 0.036 and fusing both readouts of each model a further 0.012--0.019 over the better single readout; the pretext task helps on the organisers' clips only.
 
-\textbf{Disclosures.}
-Late changes to both systems were selected on the Phase 2 board within its daily limit, so the board deltas in Table~\ref{tab:abl} and Fig.~\ref{fig:chain} are optimistic.
-The organisers' 1,806 natural clips train one BEATs and two Whisper natural models (routed) and one Whisper student (router-free); the last three also train on our validation split and select their checkpoints on it. All 695 synthetic clips train every synthetic specialist and every router-free student, so scores on those clips are in-sample.
-Unlabelled test audio was used twice: its acoustic statistics guided the background augmentation of our earliest mixture set, and its peak values checked the router. The untranscribed pool (ii) was filtered by clip ID only; 108 of its 207,268 clips come from recordings that also contain a test clip, without labels.
-From raw audio, the public code reproduces both router-free submissions on all 5,517 test clips and the routed one on 5,516 (one submitted clip carried a span patched in from an earlier submission).
+\textbf{Where natural clips fail.}
+For an earlier submission's natural ensemble on the organisers' clips, events under 0.25\,s matched 13\% of the time and 47\% of events over 4\,s were under half covered, while only 127 of 2,531 predictions touched no event: the error is edge placement, not detection.
+
+\textbf{Reproducibility and disclosures.}
+The released code reproduces both submissions (one routed clip, empty in our system, carried an earlier submission's prediction); late choices were made on the board, so board gains are optimistic.
 
 \textbf{Conclusion.}
-Transcript tags are a cheap way to constrain pseudo-labels for noise event detection, and with a localisation pretext and two complementary decodes per model they support both a routed system that placed second and a router-free system 0.0054 behind it.
-Natural recordings remain the open problem (event F1 0.53 against 0.99 on mixtures).
+Transcript tags are a free way to constrain pseudo-labels, and voting over two readouts per model gives one detector for both kinds of clip; natural edge placement remains open.
 
-\begin{thebibliography}{15}
+\begin{thebibliography}{12}
 \footnotesize
 \bibitem{mesaros} A. Mesaros, T. Heittola, and T. Virtanen, ``Metrics for polyphonic sound event detection,'' \emph{Applied Sciences}, 2016.
 \bibitem{vaani} ARTPARK, IISc and Google, ``Project Vaani,'' \url{https://vaani.iisc.ac.in}, 2025.
 \bibitem{esc50} K. J. Piczak, ``ESC: Dataset for environmental sound classification,'' in \emph{Proc. ACM Multimedia}, 2015.
 \bibitem{crnn} E. \c{C}ak{\i}r \emph{et al.}, ``Convolutional recurrent neural networks for polyphonic sound event detection,'' \emph{IEEE/ACM TASLP}, 2017.
-\bibitem{superb} S.-w. Yang \emph{et al.}, ``SUPERB: Speech processing universal performance benchmark,'' in \emph{Interspeech}, 2021.
 \bibitem{epn} F. Schmid, C. I. Tang, S. Parekh, and V. K. Ithapu, ``Sound event detection with boundary-aware optimization and inference,'' arXiv:2601.04178, 2026.
-\bibitem{meanteacher} A. Tarvainen and H. Valpola, ``Mean teachers are better role models,'' in \emph{NeurIPS}, 2017.
 \bibitem{noisystudent} Q. Xie, M.-T. Luong, E. Hovy, and Q. V. Le, ``Self-training with noisy student improves ImageNet classification,'' in \emph{CVPR}, 2020.
 \bibitem{cpjku} F. Schmid \emph{et al.}, ``Improving audio spectrogram transformers for sound event detection through multi-stage training,'' arXiv:2408.00791, 2024.
-\bibitem{wbf} R. Solovyev, W. Wang, and T. Gabruseva, ``Weighted boxes fusion: Ensembling boxes from different object detection models,'' \emph{Image and Vision Computing}, 2021.
 \bibitem{whisper} A. Radford \emph{et al.}, ``Robust speech recognition via large-scale weak supervision,'' in \emph{ICML}, 2023.
 \bibitem{wavlm} S. Chen \emph{et al.}, ``WavLM: Large-scale self-supervised pre-training for full stack speech processing,'' \emph{IEEE JSTSP}, 2022.
 \bibitem{hubert} W.-N. Hsu \emph{et al.}, ``HuBERT: Self-supervised speech representation learning by masked prediction of hidden units,'' \emph{IEEE/ACM TASLP}, 2021.
