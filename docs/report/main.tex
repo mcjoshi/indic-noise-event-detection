@@ -24,7 +24,7 @@ Only 12\% of training clips have verified timestamps, and the test set mixes nat
 Our key observation is that Vaani transcribers already mark noise events with tags in the transcripts.
 We use these tags to constrain a teacher ensemble's pseudo-labels (+0.04--0.05 Combined against held-out clips with verified timestamps, for 305k extra clips), read each model's output two ways (thresholding its activity curve, and reading events from a proposal head), and fuse all readouts with a weighted vote, which beats the better single readout by 0.012--0.019 on clips held out from training.
 Our main system is router-free: five models trained on balanced natural and synthetic data serve every clip and score 1.6114 on the test set.
-A routed variant that separates the organisers' mixtures by their peak level placed second at 1.6168, 0.0004 behind first.
+A routed variant that separates the organisers' mixtures by their peak level, our final submission, scores 1.6168.
 Code: \url{https://github.com/mcjoshi/indic-noise-event-detection}; checkpoints: \url{https://huggingface.co/manishjoshiai/indic-noise-event-detection}.
 \end{abstract}
 
@@ -47,7 +47,7 @@ Code: \url{https://github.com/mcjoshi/indic-noise-event-detection}; checkpoints:
 \draw[->] (rs.east) -| ([xshift=-4mm]o.west) -- (o.west);
 \draw[->] (rn.east) -| ([xshift=-4mm]o.west) -- (o.west);
 \end{tikzpicture}}
-\caption{Overview. Both systems share the core (left). The router-free system (top, our main method) runs one model set and one vote on every clip; the routed system (bottom, our leaderboard entry) splits clips by peak level and serves each kind with its own models.}
+\caption{Overview. Both systems share the core (left). The router-free system (top, our main method) runs one model set and one vote on every clip; the routed system (bottom, our final submission) splits clips by peak level and serves each kind with its own models.}
 \label{fig:sys}
 \end{figure*}
 
@@ -160,7 +160,7 @@ For the synthetic clips we build mixtures like the organisers': up to six ESC-50
 \emph{Router-free (our main method).}
 Five students (three Whisper-medium, one BEATs with the pretext, one WavLM) are trained on roughly equal shares of natural clips with tag-constrained labels and synthetic mixtures with exact labels.
 One vote fuses their ten decodes on every clip (Whisper and WavLM weigh 0.5, BEATs 1.0; keep at 2.5 of 6).
-\emph{Routed (our leaderboard entry).}
+\emph{Routed (our final submission).}
 The organisers' mixtures are peak-normalised to 0.99 while natural clips reach full scale, so a peak test ($|x|<0.995$) separates them exactly; this exploits a property of the release rather than the audio.
 Mixtures go to four synthetic specialists (three of four votes, then a gate dropping near-silent spans) and natural clips to six models with an unweighted vote (Fig.~\ref{fig:sys}).
 
@@ -184,18 +184,15 @@ Enhancement U-Net & ours (Track 2 pairs) & 1 R (extra input) \tabularnewline
 \end{table}
 
 \begin{table}[t]
-\caption{Phase 2 test set (5,517 clips). Natural / Synthetic give event F1 / Dice on each subset; -- = not published or not logged. $^\dagger$Both derived: overall Dice is the clip-weighted mean of the subset Dice (exact for our routed entry); F1 = Combined $-$ Dice.}
+\caption{Phase 2 test set (5,517 clips). Natural / Synthetic give event F1 / Dice on each subset; -- = not logged. $^\dagger$Both derived: overall Dice is the clip-weighted mean of the subset Dice (exact for our routed entry); F1 = Combined $-$ Dice.}
 \label{tab:main}
 \centering\footnotesize\setlength{\tabcolsep}{2.6pt}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
 System & Combined & F1 / Dice & Natural & Synthetic \\
 \midrule
-Median of 82 teams & 1.0831 & -- & -- & -- \\
 Ours, single model (Sept.) & 1.5883 & -- & .484 / .708 & .996 / .992 \\
-1st place & 1.6173 & .789 / .828 & -- & -- \\
-\textbf{Ours, routed (2nd)} & \textbf{1.6168} & .790 / .827 & .526 / .726 & .997 / .992 \\
-3rd place & 1.6168 & .789 / .828 & -- & -- \\
+\textbf{Ours, routed} & \textbf{1.6168} & .790 / .827 & .526 / .726 & .997 / .992 \\
 \textbf{Ours, router-free} & \textbf{1.6114} & .793 / .819$^\dagger$ & .526 / .715 & .993 / .990 \\
 \bottomrule
 \end{tabular}
@@ -228,9 +225,9 @@ Pretext task vs none (1 BEATs) & V / O & $-$0.003 / +0.017 \tabularnewline
 \end{table}
 
 \section{Results}
-\textbf{Leaderboard.}
-Of 82 ranked teams (median 1.083, tenth place 1.581), our routed system is second, 0.0004 below first and 0.000014 above third (1.617289, 1.616847, 1.616833); we measured a $\pm$0.002 spread between seeds of one model, so the top three are effectively tied.
-Our router-free submission scored 0.0054 lower (fourth if ranked) with a higher event F1 (0.793, derived): its gap is Dice, the frame overlap, driven by edge placement.
+\textbf{Test-set scores.}
+Our routed system scores 1.6168 (event F1 0.790, Dice 0.827) on the Phase 2 test set (Table~\ref{tab:main}), against 1.5883 for one of our earlier single models; retraining one model with another seed moves the score by up to $\pm$0.002, so smaller differences are not meaningful.
+Our router-free submission scores 0.0054 lower with a higher event F1 (0.793, derived): its gap is Dice, the frame overlap, driven by edge placement.
 
 \textbf{What each idea contributes.}
 In Table~\ref{tab:abl}, tag positions, not counts, carry the label gain for both teachers, and a student on tag-constrained labels beats one on plain labels from the same audio (+0.0036, one seed).
